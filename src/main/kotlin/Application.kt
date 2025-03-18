@@ -1,9 +1,13 @@
 package com.example
 
+import Env
+import EnvKey
 import io.ktor.server.application.*
 
 fun main(args: Array<String>) {
-    io.ktor.server.netty.EngineMain.main(args)
+    val env = Env.getList(EnvKey.GEMINI_API_KEYS)
+    println(env.first())
+//    io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun Application.module() {
