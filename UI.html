@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Client - Streaming</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        #messageContainer {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .message {
+            margin-bottom: 8px;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .sent {
+            background-color: #e3f2fd;
+            text-align: right;
+        }
+        .received {
+            background-color: #f1f1f1;
+        }
+        .system {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            font-style: italic;
+            text-align: center;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+        }
+        #messageInput {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        #sendButton {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+        #sendButton:hover {
+            background-color: #45a049;
+        }
+        #statusIndicator {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .connected {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .disconnected {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .connecting {
+            background-color: #fcf8e3;
+            color: #8a6d3b;
+        }
+        .streaming {
+            background-color: #e8f4f8;
+            color: #0275d8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebSocket Client - Streaming Responses</h1>
+        <div id="statusIndicator" class="disconnected">Disconnected</div>
+        <div id="messageContainer"></div>
+        <div class="input-container">
+            <input type="text" id="messageInput" placeholder="Type your message here..." />
+            <button id="sendButton">Send</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const messageContainer = document.getElementById('messageContainer');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const statusIndicator = document.getElementById('statusIndicator');
+            
+            let socket = null;
+            let currentResponseElement = null;
+            let isReceivingStream = false;
+            
+            // Function to connect to WebSocket server
+            function connectWebSocket() {
+                // Use the correct server address and port with WebSocket protocol
+                const wsUrl = 'ws://0.0.0.0:6060/ws';
+                
+                updateStatus('connecting', 'Connecting...');
+                
+                socket = new WebSocket(wsUrl);
+                
+                socket.onopen = function(event) {
+                    updateStatus('connected', 'Connected');
+                    displayMessage('Connected to server', 'system');
+                };
+                
+                socket.onmessage = function(event) {
+                    const message = event.data;
+                    
+                    // Check if this is the first chunk of a new response
+                    if (!isReceivingStream) {
+                        isReceivingStream = true;
+                        updateStatus('streaming', 'Receiving stream...');
+                        
+                        // Create a new message element for this stream
+                        currentResponseElement = document.createElement('div');
+                        currentResponseElement.classList.add('message', 'received');
+                        currentResponseElement.textContent = message;
+                        messageContainer.appendChild(currentResponseElement);
+                    } else {
+                        // Append to existing stream
+                        currentResponseElement.textContent += message;
+                    }
+                    
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                };
+                
+                socket.onclose = function(event) {
+                    const reason = event.reason ? `: ${event.reason}` : '';
+                    updateStatus('disconnected', `Disconnected (code: ${event.code}${reason})`);
+                    displayMessage(`Connection closed${reason}`, 'system');
+                    
+                    // Reset streaming state
+                    isReceivingStream = false;
+                    currentResponseElement = null;
+                    
+                    // Try to reconnect after 5 seconds
+                    setTimeout(connectWebSocket, 5000);
+                };
+                
+                socket.onerror = function(error) {
+                    updateStatus('disconnected', 'Connection error');
+                    displayMessage('Connection error', 'system');
+                    console.error('WebSocket error:', error);
+                    
+                    // Reset streaming state
+                    isReceivingStream = false;
+                    currentResponseElement = null;
+                };
+            }
+            
+            // Function to send message
+            function sendMessage() {
+                const message = messageInput.value.trim();
+                if (message && socket && socket.readyState === WebSocket.OPEN) {
+                    socket.send(message);
+                    displayMessage(message, 'sent');
+                    messageInput.value = '';
+                    
+                    // Reset streaming state for new response
+                    isReceivingStream = false;
+                    currentResponseElement = null;
+                    
+                    updateStatus('connected', 'Message sent, awaiting response...');
+                }
+            }
+            
+            // Function to display messages
+            function displayMessage(message, type) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', type);
+                messageElement.textContent = message;
+                messageContainer.appendChild(messageElement);
+                messageContainer.scrollTop = messageContainer.scrollHeight;
+            }
+            
+            // Function to update connection status
+            function updateStatus(status, message) {
+                statusIndicator.className = status;
+                statusIndicator.textContent = message;
+            }
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            
+            messageInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Initial connection
+            connectWebSocket();
+        });
+    </script>
+</body>
+</html>
