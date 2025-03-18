@@ -4,8 +4,10 @@ koin-version = "3.5.6"
 kotlin-version = "2.1.10"
 ktor-version = "3.1.1"
 logback-version = "1.4.14"
+google-genai-version = "0.1.0"
 
 [libraries]
+google-genai = { module = "com.google.genai:google-genai", version.ref = "google-genai-version" }
 ktor-network-tls = { module = "io.ktor:ktor-network-tls", version.ref = "ktor-version" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor-version" }
 ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor-version" }

@@ -14,6 +14,7 @@ sealed class EnvValue {
 
 enum class EnvKey(val type: EnvValueType) {
     GEMINI_API_KEYS(EnvValueType.ARRAY),
+    GOOGLE_API_KEY(EnvValueType.STRING),
     OLLAMA_API_KEY(EnvValueType.STRING);
 
     companion object {

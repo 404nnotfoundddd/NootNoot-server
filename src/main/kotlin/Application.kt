@@ -1,13 +1,13 @@
 package com.example
 
-import Env
-import EnvKey
 import io.ktor.server.application.*
+import io.ktor.server.engine.*
 
 fun main(args: Array<String>) {
-    val env = Env.getList(EnvKey.GEMINI_API_KEYS)
-    println(env.first())
-//    io.ktor.server.netty.EngineMain.main(args)
+    val port = applicationEnvironment().config.propertyOrNull("ktor.deployment.port")?.getString() ?: "8080"
+    println("Listening on port $port")
+
+    io.ktor.server.netty.EngineMain.main(args)
 }
 
 fun Application.module() {
@@ -15,3 +15,4 @@ fun Application.module() {
     configureFrameworks()
     configureRouting()
 }
+

@@ -19,6 +19,7 @@ repositories {
 }
 
 dependencies {
+    implementation(libs.google.genai)
     implementation(libs.ktor.network.tls)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.websockets)
